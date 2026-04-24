@@ -44,3 +44,6 @@ app.*.map.json
 #
 # See https://github.com/flutter/flutter/issues/40061
 /.idea/workspace.xml
+
+# Reference folder
+react_reference/
