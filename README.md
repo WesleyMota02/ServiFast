@@ -1,11 +1,9 @@
+# ServiFast
 
-  # SERVIFAST
+App para contratação de serviços gerais que conecta clientes a profissionais avaliados perto de casa. Oferece uma vitrine digital para autônomos, com chat integrado e perfis dedicados.
 
-  This is a code bundle for SERVIFAST. The original project is available at https://www.figma.com/design/VtSVbDV537Ld1Z0tbTgFkB/SERVIFAST.
+## Running the code
 
-  ## Running the code
+Run `npm i` to install the dependencies.
 
-  Run `npm i` to install the dependencies.
-
-  Run `npm run dev` to start the development server.
-  
+Run `npm run dev` to start the development server.
