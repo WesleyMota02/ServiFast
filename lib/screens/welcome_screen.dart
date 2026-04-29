@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -88,29 +89,15 @@ class WelcomeScreen extends StatelessWidget {
                       // Botão Secundário
                       OutlinedButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/login');
+                          context.push('/login');
                         },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Color(0xFFFF6B00), width: 1.5),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          minimumSize: const Size(double.infinity, 56),
-                        ),
-                        child: const Text(
-                          'Entrar na conta',
-                          style: TextStyle(
-                            color: Color(0xFFFF6B00),
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        child: const Text('Entrar na conta'),
                       ),
                       const SizedBox(height: 16),
                       // Botão Primário
                       ElevatedButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, '/choose_profile');
+                          context.push('/choose_profile');
                         },
                         child: const Text('Criar conta'),
                       ),

@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/floating_input.dart';
 import 'package:confetti/confetti.dart';
+import 'success_feedback_screen.dart';
 
-class RegisterClientScreen extends StatefulWidget {
+class RegisterClientScreen extends ConsumerStatefulWidget {
   const RegisterClientScreen({super.key});
 
   @override
-  State<RegisterClientScreen> createState() => _RegisterClientScreenState();
+  ConsumerState<RegisterClientScreen> createState() => _RegisterClientScreenState();
 }
 
-class _RegisterClientScreenState extends State<RegisterClientScreen> {
+class _RegisterClientScreenState extends ConsumerState<RegisterClientScreen> {
   int _step = 1;
   bool _showPassword = false;
   bool _showConfirmPassword = false;
@@ -92,19 +96,41 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
     if (_step > 1) {
       setState(() => _step--);
     } else {
-      Navigator.pop(context);
+      context.pop();
     }
   }
 
-  void _handleFinish() {
+  Future<void> _handleFinish() async {
     if (!_termos) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Você precisa aceitar os termos')),
       );
       return;
     }
-    setState(() => _step = 4);
-    _confettiController.play();
+
+    final success = await ref.read(authProvider.notifier).registerClient(
+      name: _nomeCtrl.text.trim(),
+      email: _emailCtrl.text.trim(),
+      phone: _telefoneCtrl.text.trim(),
+      password: _senhaCtrl.text,
+      cep: _cepCtrl.text.trim(),
+      city: _cidadeCtrl.text.trim(),
+      stateStr: _estadoCtrl.text.trim(),
+      neighborhood: _bairroCtrl.text.trim(),
+    );
+
+    if (success && mounted) {
+      setState(() => _step = 4);
+      _confettiController.play();
+    } else if (mounted) {
+      final error = ref.read(authProvider).error;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error ?? 'Erro ao criar conta'),
+          backgroundColor: const Color(0xFFE74C3C),
+        ),
+      );
+    }
   }
 
   void _searchCep() {
@@ -474,11 +500,6 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
         const SizedBox(height: 32),
         ElevatedButton(
           onPressed: _termos ? _handleFinish : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _termos ? const Color(0xFFFF6B00) : const Color(0xFFEEEEEE),
-            foregroundColor: _termos ? Colors.white : const Color(0xFFAAAAAA),
-            elevation: _termos ? 4 : 0,
-          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -493,48 +514,11 @@ class _RegisterClientScreenState extends State<RegisterClientScreen> {
   }
 
   Widget _buildSuccessScreen() {
-    return Stack(
-      children: [
-        Scaffold(
-          backgroundColor: Colors.white,
-          body: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 96,
-                  height: 96,
-                  decoration: const BoxDecoration(color: Color(0xFFFFF3E8), shape: BoxShape.circle),
-                  child: const Center(child: Text('🎉', style: TextStyle(fontSize: 40))),
-                ),
-                const SizedBox(height: 24),
-                const Text('Conta criada com sucesso!', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
-                const SizedBox(height: 8),
-                Text('Bem-vindo ao ServiFast, ${_nomeCtrl.text.split(" ").first.isNotEmpty ? _nomeCtrl.text.split(" ").first : "Cliente"}!', style: const TextStyle(fontSize: 18, color: Color(0xFF1A1A1A))),
-                const SizedBox(height: 16),
-                const Text('Agora você pode contratar serviços perto de você.', textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: Color(0xFF6B6B6B))),
-                const SizedBox(height: 48),
-                ElevatedButton(
-                  onPressed: () {
-                    // Navigator.pushReplacementNamed(context, '/client_home');
-                  },
-                  child: const Text('Ir para o início →'),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Align(
-          alignment: Alignment.topCenter,
-          child: ConfettiWidget(
-            confettiController: _confettiController,
-            blastDirectionality: BlastDirectionality.explosive,
-            colors: const [Color(0xFFFF6B00), Color(0xFFFFA466), Colors.white],
-            shouldLoop: false,
-          ),
-        ),
-      ],
+    return SuccessFeedbackScreen(
+      title: 'Conta criada com sucesso!',
+      subtitle: 'Bem-vindo ao ServiFast, ${_nomeCtrl.text.split(" ").first.isNotEmpty ? _nomeCtrl.text.split(" ").first : "Cliente"}!\nAgora você pode contratar serviços perto de você.',
+      buttonText: 'Ir para o início →',
+      nextRoute: '/client_home',
     );
   }
 }

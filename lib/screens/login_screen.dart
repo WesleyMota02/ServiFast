@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/auth_provider.dart';
+import '../widgets/floating_input.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -19,21 +23,32 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _submit() {
-    // Dispara a validação de todos os TextFormFields
+  Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
-      // Simulação de login
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Autenticando usuário...'),
-          backgroundColor: Color(0xFFFF6B00),
-        ),
+      final success = await ref.read(authProvider.notifier).login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
       );
+
+      if (success && mounted) {
+        // Redireciona para home de cliente por padrão (pode ser aprimorado para checar o tipo depois)
+        context.go('/client_home');
+      } else if (mounted) {
+        final error = ref.read(authProvider).error;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error ?? 'Erro ao fazer login'),
+            backgroundColor: const Color(0xFFE74C3C),
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -72,43 +87,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // 3. Campos de Entrada (TextFormField) - Email
-                TextFormField(
+                // 3. Campos de Entrada (FloatingInput) - Email
+                FloatingInput(
                   controller: _emailController,
+                  label: 'E-mail',
+                  icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'E-mail',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, insira seu e-mail.';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Insira um endereço de e-mail válido.';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 20),
 
-                // 3. Campos de Entrada (TextFormField) - Senha
-                TextFormField(
+                // 3. Campos de Entrada (FloatingInput) - Senha
+                FloatingInput(
                   controller: _passwordController,
+                  label: 'Senha',
+                  icon: Icons.lock_outline,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Senha',
-                    prefixIcon: Icon(Icons.lock_outline),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, insira sua senha.';
-                    }
-                    if (value.length < 6) {
-                      return 'A senha deve conter no mínimo 6 caracteres.';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 12),
 
@@ -117,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () {
-                      // Navegar para recuperação de senha
+                      context.push('/recover_password');
                     },
                     child: const Text('Esqueci minha senha'),
                   ),
@@ -126,8 +119,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // 4. Botão Principal (ElevatedButton)
                 ElevatedButton(
-                  onPressed: _submit,
-                  child: const Text('Entrar'),
+                  onPressed: authState.isLoading ? null : _submit,
+                  child: authState.isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text('Entrar'),
                 ),
                 const SizedBox(height: 32),
 
@@ -141,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     TextButton(
                       onPressed: () {
-                        // Navegar para Cadastro
+                        context.push('/choose_profile');
                       },
                       child: const Text('Cadastre-se'),
                     ),

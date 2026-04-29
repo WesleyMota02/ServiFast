@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "782589507666",
+    "project_id": "servifast-be40d",
+    "storage_bucket": "servifast-be40d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:782589507666:android:6fe7a14c23fe3b7a86c78b",
+        "android_client_info": {
+          "package_name": "com.example.servifast_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCPlH0t67WYk3QQ3r6faxSDiZFrADv_sQY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

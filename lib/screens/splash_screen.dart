@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -31,12 +34,37 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _controller.forward();
 
-    // Redirecionamento após 2.5s (como na original)
-    Timer(const Duration(milliseconds: 2500), () {
-      // TODO: Usar GoRouter para navegar para '/onboarding'
-      // context.go('/onboarding');
-      Navigator.pushReplacementNamed(context, '/onboarding');
-    });
+    _checkAuthAndRedirect();
+  }
+
+  Future<void> _checkAuthAndRedirect() async {
+    // Dá um tempo mínimo para a animação da splash (2.5s)
+    await Future.delayed(const Duration(milliseconds: 2500));
+    
+    if (!mounted) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user != null) {
+      try {
+        final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        if (doc.exists && mounted) {
+          final type = doc.data()?['type'] as String?;
+          if (type == 'professional') {
+            context.go('/pro_home');
+          } else {
+            context.go('/client_home');
+          }
+          return;
+        }
+      } catch (e) {
+        // Se houver erro ao buscar o doc, ignora e vai pro onboarding pra garantir
+      }
+    }
+
+    if (mounted) {
+      context.go('/onboarding');
+    }
   }
 
   @override

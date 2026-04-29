@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../widgets/floating_input.dart';
 
 class RecoverPasswordScreen extends StatefulWidget {
   const RecoverPasswordScreen({super.key});
@@ -30,7 +32,7 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
     );
 
     Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) Navigator.pushReplacementNamed(context, '/login');
+      if (mounted) context.go('/login');
     });
   }
 
@@ -88,22 +90,17 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
               const SizedBox(height: 32),
 
               // Input E-mail
-              TextFormField(
+              FloatingInput(
                 controller: _emailController,
+                label: 'E-mail',
+                icon: Icons.email_outlined,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'E-mail',
-                ),
               ),
               const SizedBox(height: 24),
 
               // Botão Enviar
               ElevatedButton(
                 onPressed: _handleRecover,
-                style: ElevatedButton.styleFrom(
-                  elevation: 8,
-                  shadowColor: const Color(0x33FF6B00), // shadow-[0_4px_12px_rgba(255,107,0,0.20)]
-                ),
                 child: const Text('Enviar link de recuperação'),
               ),
 
@@ -122,7 +119,7 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
                         ),
                       ),
                       TextButton(
-                        onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                        onPressed: () => context.go('/login'),
                         child: const Text(
                           'Voltar para o login',
                           style: TextStyle(

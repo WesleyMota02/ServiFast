@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class ChooseProfileScreen extends StatefulWidget {
   const ChooseProfileScreen({super.key});
@@ -31,7 +32,7 @@ class _ChooseProfileScreenState extends State<ChooseProfileScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Color(0xFF1A1A1A)),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => context.pop(),
                     padding: EdgeInsets.zero,
                     alignment: Alignment.centerLeft,
                     splashRadius: 24,
@@ -79,9 +80,9 @@ class _ChooseProfileScreenState extends State<ChooseProfileScreen> {
                     ? null
                     : () {
                         if (_selectedProfile == 'client') {
-                          Navigator.pushNamed(context, '/register_client');
+                          context.push('/register_client');
                         } else {
-                          Navigator.pushNamed(context, '/register_professional');
+                          context.push('/register_professional');
                         }
                       },
                 child: const Text('Continuar'),

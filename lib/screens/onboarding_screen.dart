@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -37,12 +38,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _currentIndex++;
       });
     } else {
-      Navigator.pushReplacementNamed(context, '/welcome');
+      context.go('/welcome');
     }
   }
 
   void _skip() {
-    Navigator.pushReplacementNamed(context, '/welcome');
+    context.go('/welcome');
   }
 
   @override
