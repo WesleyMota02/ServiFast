@@ -84,3 +84,13 @@ final requestDetailProvider = StreamProvider.family<Map<String, dynamic>?, Strin
       .snapshots()
       .map((doc) => doc.exists ? {'id': doc.id, ...?doc.data()} : null);
 });
+
+// Stream para ler as notificações de um usuário
+final notificationsProvider = StreamProvider.family<List<Map<String, dynamic>>, String>((ref, userId) {
+  return ref.watch(firestoreProvider)
+      .collection('notifications')
+      .where('userId', isEqualTo: userId)
+      .orderBy('createdAt', descending: true)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList());
+});

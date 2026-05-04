@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../providers/firestore_provider.dart';
 import '../../models/request_model.dart';
 import '../../theme/app_theme.dart';
@@ -59,6 +60,16 @@ class _RequestServiceScreenState extends ConsumerState<RequestServiceScreen> {
       );
 
       await firestore.collection('requests').add(request.toMap());
+
+      final clientName = clientDoc.data()?['name'] ?? 'Um cliente';
+      await firestore.collection('notifications').add({
+        'userId': widget.professionalId,
+        'title': 'Novo Pedido Recebido',
+        'body': '$clientName acabou de solicitar um serviço.',
+        'type': 'info',
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
       if (!mounted) return;
       

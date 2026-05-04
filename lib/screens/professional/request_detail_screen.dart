@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../providers/firestore_provider.dart';
 import '../../theme/app_theme.dart';
 
@@ -17,12 +18,44 @@ class RequestDetailScreen extends ConsumerStatefulWidget {
 class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen> {
   bool _isLoading = false;
 
-  Future<void> _updateStatus(String newStatus, String successMessage) async {
+  Future<void> _updateStatus(Map<String, dynamic> req, String newStatus, String successMessage) async {
     setState(() => _isLoading = true);
     try {
       final firestore = ref.read(firestoreProvider);
+      
+      // Update status
       await firestore.collection('requests').doc(widget.requestId).update({
         'status': newStatus,
+      });
+
+      // Send notification
+      String title = '';
+      String body = '';
+      String type = 'info';
+
+      final proName = req['professionalName'] ?? 'O profissional';
+      
+      if (newStatus == 'Aceita') {
+        title = 'Solicitação Aceita!';
+        body = '$proName aceitou seu serviço.';
+        type = 'success';
+      } else if (newStatus == 'Recusada') {
+        title = 'Solicitação Recusada';
+        body = '$proName não pôde aceitar seu serviço no momento.';
+        type = 'info';
+      } else if (newStatus == 'Concluída') {
+        title = 'Serviço Concluído!';
+        body = '$proName marcou o serviço como concluído.';
+        type = 'success';
+      }
+
+      await firestore.collection('notifications').add({
+        'userId': req['clientId'],
+        'title': title,
+        'body': body,
+        'type': type,
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(successMessage), backgroundColor: AppTheme.successColor));
@@ -142,7 +175,7 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen> {
                         children: [
                           Expanded(
                             child: OutlinedButton(
-                              onPressed: () => _updateStatus('Recusada', 'Serviço recusado.'),
+                              onPressed: () => _updateStatus(req, 'Recusada', 'Serviço recusado.'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppTheme.errorColor,
                                 side: const BorderSide(color: AppTheme.errorColor),
@@ -153,7 +186,7 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: ElevatedButton(
-                              onPressed: () => _updateStatus('Aceita', 'Serviço aceito!'),
+                              onPressed: () => _updateStatus(req, 'Aceita', 'Serviço aceito!'),
                               style: ElevatedButton.styleFrom(backgroundColor: AppTheme.successColor),
                               child: const Text('Aceitar'),
                             ),
@@ -170,7 +203,7 @@ class _RequestDetailScreenState extends ConsumerState<RequestDetailScreen> {
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor))
                     : ElevatedButton(
-                        onPressed: () => _updateStatus('Concluída', 'Serviço marcado como concluído!'),
+                        onPressed: () => _updateStatus(req, 'Concluída', 'Serviço marcado como concluído!'),
                         child: const Text('Marcar como Concluído'),
                       ),
               ),

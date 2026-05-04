@@ -1,41 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../providers/firestore_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/empty_state.dart';
 
-class NotificationsScreen extends StatelessWidget {
+class NotificationsScreen extends ConsumerWidget {
   const NotificationsScreen({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    // Lista mock de notificações
-    final List<Map<String, dynamic>> mockNotifications = [
-      {
-        'title': 'Solicitação Aceita!',
-        'body': 'O profissional João Silva aceitou seu serviço. Entre em contato para detalhes.',
-        'time': 'Agora',
-        'isRead': false,
-        'icon': Icons.check_circle_rounded,
-        'color': AppTheme.successColor,
-      },
-      {
-        'title': 'Novo Pedido Recebido',
-        'body': 'Você tem um novo pedido de instalação elétrica na sua área.',
-        'time': 'Há 2 horas',
-        'isRead': true,
-        'icon': Icons.inbox_rounded,
-        'color': AppTheme.primaryColor,
-      },
-      {
-        'title': 'Bem-vindo ao ServiFast!',
-        'body': 'Sua conta foi criada com sucesso. Comece a explorar agora.',
-        'time': 'Ontem',
-        'isRead': true,
-        'icon': Icons.waving_hand_rounded,
-        'color': Color(0xFF3498DB),
-      },
-    ];
+  Future<void> _markAsRead(WidgetRef ref, String notificationId) async {
+    final firestore = ref.read(firestoreProvider);
+    await firestore.collection('notifications').doc(notificationId).update({'isRead': true});
+  }
 
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          title: const Text('Notificações', style: TextStyle(color: AppTheme.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: AppTheme.textPrimary),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: const Center(child: Text('Usuário não autenticado.')),
+      );
+    }
+
+    final notificationsAsync = ref.watch(notificationsProvider(user.uid));
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -46,27 +45,58 @@ class NotificationsScreen extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
       ),
-      body: mockNotifications.isEmpty
-          ? const EmptyState(
+      body: notificationsAsync.when(
+        data: (notifications) {
+          if (notifications.isEmpty) {
+            return const EmptyState(
               icon: Icons.notifications_off_rounded,
               title: 'Nenhuma notificação',
               description: 'Você não tem novas notificações no momento.',
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(24),
-              itemCount: mockNotifications.length,
-              itemBuilder: (context, index) {
-                final notif = mockNotifications[index];
-                return _buildNotificationCard(
-                  title: notif['title'],
-                  body: notif['body'],
-                  time: notif['time'],
-                  isRead: notif['isRead'],
-                  icon: notif['icon'],
-                  color: notif['color'],
-                );
-              },
-            ),
+            );
+          }
+          return ListView.builder(
+            padding: const EdgeInsets.all(24),
+            itemCount: notifications.length,
+            itemBuilder: (context, index) {
+              final notif = notifications[index];
+              
+              DateTime? dt;
+              if (notif['createdAt'] != null) {
+                dt = (notif['createdAt'] as Timestamp).toDate();
+              }
+              String timeStr = dt != null ? DateFormat('dd/MM HH:mm').format(dt) : 'Agora';
+
+              IconData iconData = Icons.notifications;
+              Color iconColor = AppTheme.primaryColor;
+              if (notif['type'] == 'success') {
+                iconData = Icons.check_circle_rounded;
+                iconColor = AppTheme.successColor;
+              } else if (notif['type'] == 'info') {
+                iconData = Icons.info_outline_rounded;
+                iconColor = const Color(0xFF3498DB);
+              }
+
+              return GestureDetector(
+                onTap: () {
+                  if (!(notif['isRead'] ?? false)) {
+                    _markAsRead(ref, notif['id']);
+                  }
+                },
+                child: _buildNotificationCard(
+                  title: notif['title'] ?? 'Nova Notificação',
+                  body: notif['body'] ?? '',
+                  time: timeStr,
+                  isRead: notif['isRead'] ?? false,
+                  icon: iconData,
+                  color: iconColor,
+                ),
+              );
+            },
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor)),
+        error: (err, stack) => Center(child: Text('Erro: $err')),
+      ),
     );
   }
 

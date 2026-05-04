@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/firestore_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/loading_skeleton.dart';
 
-class SearchResultsScreen extends StatefulWidget {
+class SearchResultsScreen extends ConsumerStatefulWidget {
   const SearchResultsScreen({super.key});
 
   @override
-  State<SearchResultsScreen> createState() => _SearchResultsScreenState();
+  ConsumerState<SearchResultsScreen> createState() => _SearchResultsScreenState();
 }
 
-class _SearchResultsScreenState extends State<SearchResultsScreen> {
+class _SearchResultsScreenState extends ConsumerState<SearchResultsScreen> {
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = false;
   bool _hasSearched = false;
@@ -31,20 +33,30 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       _hasSearched = true;
     });
 
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      final allPros = await ref.read(professionalsListProvider.future);
+      
+      if (!mounted) return;
 
-    if (!mounted) return;
+      final lowerQuery = query.toLowerCase();
+      final filtered = allPros.where((pro) {
+        final name = (pro['name'] as String?)?.toLowerCase() ?? '';
+        final category = (pro['category'] as String?)?.toLowerCase() ?? '';
+        return name.contains(lowerQuery) || category.contains(lowerQuery);
+      }).toList();
 
-    // Mock search logic
-    if (query.toLowerCase().contains('ele')) {
       setState(() {
         _isLoading = false;
-        _results = [
-          {'name': 'João Silva', 'category': 'Eletricista', 'rating': '4.9', 'distance': '1.2 km', 'uid': 'mock1'},
-          {'name': 'Marcos Oliveira', 'category': 'Eletricista Industrial', 'rating': '4.7', 'distance': '4.5 km', 'uid': 'mock2'},
-        ];
+        _results = filtered.map((pro) => {
+          'name': pro['name'].toString(),
+          'category': pro['category'].toString(),
+          'rating': (pro['rating'] ?? 5.0).toString(),
+          'distance': 'Aprox. 2 km', // Mock distance for now
+          'uid': pro['uid'].toString(),
+        }).toList();
       });
-    } else {
+    } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _results = [];
