@@ -22,9 +22,17 @@ import '../../screens/professional/pro_requests_screen.dart';
 import '../../screens/professional/request_detail_screen.dart';
 import '../../screens/professional/pro_settings_screen.dart';
 
+import '../../screens/error_screen.dart';
+import '../../screens/chat_screen.dart';
+import '../../screens/client/review_professional_screen.dart';
+import '../../screens/professional/pro_services_screen.dart';
+import '../../screens/professional/pro_reviews_screen.dart';
+import '../../screens/professional/pro_public_profile_screen.dart';
+
 class AppRoutes {
   static final GoRouter router = GoRouter(
     initialLocation: '/splash',
+    errorBuilder: (context, state) => ErrorScreen(error: state.error),
     routes: [
       GoRoute(
         path: '/splash',
@@ -110,6 +118,44 @@ class AppRoutes {
       GoRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/error',
+        builder: (context, state) => ErrorScreen(error: state.error),
+      ),
+      GoRoute(
+        path: '/chat',
+        builder: (context, state) {
+          final requestId = state.extra as String?;
+          return ChatScreen(requestId: requestId ?? '');
+        },
+      ),
+      GoRoute(
+        path: '/review_professional',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final professionalId = extra['professionalId'] as String? ?? '';
+          final requestId = extra['requestId'] as String? ?? '';
+          return ReviewProfessionalScreen(
+            professionalId: professionalId,
+            requestId: requestId,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/pro_services',
+        builder: (context, state) => const ProServicesScreen(),
+      ),
+      GoRoute(
+        path: '/pro_reviews',
+        builder: (context, state) => const ProReviewsScreen(),
+      ),
+      GoRoute(
+        path: '/pro_public_profile',
+        builder: (context, state) {
+          final uid = state.extra as String?;
+          return ProPublicProfileScreen(uid: uid ?? '');
+        },
       ),
     ],
   );
